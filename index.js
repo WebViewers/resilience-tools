@@ -4,6 +4,7 @@ var XMHell = require('xmhell');
 var Fs = require('fs');
 var Walk = require('walkdir');
 var Archiver = require('archiver');
+var FormData = require('form-data');
 
 var LGPL = "\n" +
     " *\n" +
@@ -117,17 +118,18 @@ module.exports.genMvn = function(gadgetDir, outDir) {
 
 module.exports.genZip = function(gadgetDir, callback) {
   var zip;
+  var zipName;
   var workers = 0;
   var stop = function() {
     if (--workers) { return; }
-    zip.finalize(callback);
+    zip.finalize(function() { callback(zipName); });
     zip = undefined;
   };
 
   Fs.readFile(gadgetDir + '/package.json', function(err, content) {
     if (err) { throw err; }
     var json = JSON.parse(content);
-    var zipName = json.name + '-' + json.version + '.zip';
+    zipName = json.name + '-' + json.version + '.zip';
     if (Fs.existsSync(zipName)) {
       console.log('Deleting ' + zipName);
       Fs.unlinkSync(zipName);
@@ -148,9 +150,71 @@ module.exports.genZip = function(gadgetDir, callback) {
   });
 };
 
+
+var doWithFormToken = function(userPass, host, port, path, callback) {
+  var Http = require('http');
+
+  var options = {
+    host: host,
+    path: path,
+    port: port,
+    auth: userPass
+  };
+
+  Http.request(options, function(response) {
+    var str = ''
+    response.on('data', function (chunk) {
+      str += chunk;
+    });
+
+    response.on('end', function () {
+      str.replace(/<meta name="form_token" content="([^"]*)"/, function(l, t) {
+          callback(t);
+          callback = function(){};
+      });
+    });
+  }).end();
+};
+
+module.exports.postToXWiki = function(gadgetDir, postCmd, callback) {
+
+  var userPass = postCmd.split('@')[0];
+  var url = postCmd.split('@')[1];
+  var host = url.split(':')[0].split(':')[0];
+  var port = (url.split(':')[1] || '80').split('/')[0];
+  var path = url.replace(url.split('/')[0], '');
+
+  doWithFormToken(userPass, host, port, path.replace(/upload/, 'view'), function(token) {
+    module.exports.genZip(gadgetDir, function(zip) {
+      var form = new FormData();
+
+      form.append('filepath', Fs.createReadStream(zip));
+      form.append('form_token', token);
+      form.submit({
+        host: host,
+        port: port,
+        path: path,
+        auth: userPass
+      }, function(err, res) {
+        if (err) { throw err; }
+        callback();
+        //console.log(res);
+      });
+    });
+  });
+};
+
 module.exports.commandLine = function() {
   if (process.argv.indexOf('--mvn') > -1) {
     module.exports.genMvn('src', 'mvnout');
+
+  } else if (process.argv.indexOf('--post') > -1) {
+    var path = process.argv[process.argv.indexOf('--post') + 1];
+    console.log("Posting to XWiki");
+    module.exports.postToXWiki('src', path, function () {
+      console.log('done');
+    });
+
   } else {
     module.exports.genZip('src', function() {
       console.log('done');
