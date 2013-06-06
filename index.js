@@ -5,6 +5,8 @@ var Fs = require('fs');
 var Walk = require('walkdir');
 var Archiver = require('archiver');
 var FormData = require('form-data');
+var Path = require('path');
+var Http = require('http');
 
 var LGPL = "\n" +
     " *\n" +
@@ -116,17 +118,18 @@ module.exports.genMvn = function(gadgetDir, outDir) {
   });
 };
 
-module.exports.genZip = function(gadgetDir, callback) {
+module.exports.genZip = function(dir, callback) {
+  var gadgetDir = Path.resolve(dir);
   var zip;
   var zipName;
   var workers = 0;
   var stop = function() {
-    if (--workers) { return; }
+    if (workers && --workers) { return; }
     zip.finalize(function() { callback(zipName); });
     zip = undefined;
   };
 
-  Fs.readFile(gadgetDir + '/package.json', function(err, content) {
+  Fs.readFile(gadgetDir + '/../package.json', function(err, content) {
     if (err) { throw err; }
     var json = JSON.parse(content);
     zipName = json.name + '-' + json.version + '.zip';
@@ -137,6 +140,10 @@ module.exports.genZip = function(gadgetDir, callback) {
 
     zip = new Archiver.createZip({ level: 1 });
     zip.pipe(Fs.createWriteStream(zipName));
+
+    zip.addFile(content, { name: 'package.json' }, function() {
+      console.log("package.json Complete");
+    });
 
     var w = Walk(gadgetDir);
     w.on('file', function(path) {
@@ -152,7 +159,6 @@ module.exports.genZip = function(gadgetDir, callback) {
 
 
 var doWithFormToken = function(userPass, host, port, path, callback) {
-  var Http = require('http');
 
   var options = {
     host: host,
@@ -162,6 +168,7 @@ var doWithFormToken = function(userPass, host, port, path, callback) {
   };
 
   Http.request(options, function(response) {
+
     var str = ''
     response.on('data', function (chunk) {
       str += chunk;
@@ -183,6 +190,12 @@ module.exports.postToXWiki = function(gadgetDir, postCmd, callback) {
   var host = url.split(':')[0].split(':')[0];
   var port = (url.split(':')[1] || '80').split('/')[0];
   var path = url.replace(url.split('/')[0], '');
+
+  console.log("url:"+url);
+  console.log("host:"+host);
+  console.log("port:"+port);
+  console.log("path:"+path);
+  console.log("userPass:"+userPass);
 
   doWithFormToken(userPass, host, port, path.replace(/upload/, 'view'), function(token) {
     module.exports.genZip(gadgetDir, function(zip) {
