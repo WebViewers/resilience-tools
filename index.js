@@ -88,7 +88,7 @@ assemblyXML['assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plug
 }
 
 module.exports.genMvn = function(gadgetDir, outDir) {
-  Fs.readFile(gadgetDir + '/package.json', function(err, content) {
+  Fs.readFile(gadgetDir + '/../package.json', function(err, content) {
     if (err) { throw err; }
     var json = JSON.parse(content);
     project.artifactId = "xwiki-contrib-" + json.name;
@@ -99,6 +99,9 @@ module.exports.genMvn = function(gadgetDir, outDir) {
     Mkdirp(outDir+'/src/main/resources', function (err) {
       if (err) { throw err; }
       Ncp(gadgetDir, outDir+'/src/main/resources', function (err) {
+        if (err) { throw err; }
+      });
+      Ncp(gadgetDir + '/../package.json', outDir+'/src/main/resources/package.json', function (err) {
         if (err) { throw err; }
       });
 

@@ -2,7 +2,7 @@
     "author": "Caleb James DeLisle",
     "name": "resilience-tools",
     "description": "Tools for building resilience/renderjs .zip packages which can be imported into XWiki",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "repository": {
         "url": "https://github.com/cjdelisle/resilience-tools.git",
         "type": "git"
