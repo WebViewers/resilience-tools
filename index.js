@@ -144,11 +144,16 @@ module.exports.genZip = function(dir, callback) {
     zip = new Archiver.createZip({ level: 1 });
     zip.pipe(Fs.createWriteStream(zipName));
 
-    zip.addFile(content, { name: 'package.json' }, function() {
-      console.log("package.json Complete");
+    var w = Walk(gadgetDir);
+
+    w.on('end', function() {
+      zip.addFile(content, { name: 'package.json' }, function() {
+        console.log("package.json Complete");
+        stop();
+      });
+      workers++;
     });
 
-    var w = Walk(gadgetDir);
     w.on('file', function(path) {
       var name = path.replace(gadgetDir + '/', '');
       zip.addFile(Fs.createReadStream(path), { name: name }, function() {
