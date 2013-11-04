@@ -145,23 +145,26 @@ module.exports.genZip = function(dir, callback) {
     zip.pipe(Fs.createWriteStream(zipName));
 
     var w = Walk(gadgetDir);
-
-    w.on('end', function() {
-      zip.addFile(content, { name: 'package.json' }, function() {
-        console.log("package.json Complete");
-        stop();
-      });
-      workers++;
-    });
-
+    var files = [];
+    files.push({getData:function(cb) { cb(undefined, content) }, name:'package.json' });
     w.on('file', function(path) {
       var name = path.replace(gadgetDir + '/', '');
-      zip.addFile(Fs.createReadStream(path), { name: name }, function() {
-        console.log(name + " Complete");
-        stop();
-      });
-      workers++;
+      files.push({getData:function(cb) { Fs.readFile(path, cb); }, name:name});
     });
+
+    w.on('end', function() {
+      workers += files.length;
+      files.forEach(function(file) {
+        file.getData(function(err, data) {
+          if (err) { throw err; }
+          zip.addFile(data, { name: file.name }, function() {
+            console.log(file.name + " Complete");
+            stop();
+          });
+        });
+      });
+    });
+
   });
 };
 
@@ -233,7 +236,7 @@ module.exports.commandLine = function() {
     var path = process.argv[process.argv.indexOf('--post') + 1];
     console.log("Posting to XWiki");
     module.exports.postToXWiki('src', path, function () {
-      console.log('done');
+      console.log('posting complete');
     });
 
   } else {
