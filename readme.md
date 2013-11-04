@@ -14,14 +14,14 @@ directory, **not** in `/src`.
 
 * Add this to your `package.json`:
 
-    "dependencies": {
-        "resilience-tools": "~0.3.2"
-    },
+        "dependencies": {
+            "resilience-tools": "~0.3.2"
+        },
 
 * add a file called `./do` containing the following:
 
-    #!/usr/bin/env node
-    require('resilience-tools').commandLine();
+        #!/usr/bin/env node
+        require('resilience-tools').commandLine();
 
 * In your readme, instruct users to first type `npm install` and then `./do`
 in order to "compile" your webviewer.
