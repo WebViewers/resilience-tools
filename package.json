@@ -8,7 +8,7 @@
         "type": "git"
     },
     "bin": {
-        "wv2xar":"./bin/wv2xar"
+        "wvmake":"./bin/wvmake"
     },
     "main": "./lib/index.js",
     "dependencies": {
