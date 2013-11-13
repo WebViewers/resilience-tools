@@ -1,16 +1,18 @@
 {
     "author": "Caleb James DeLisle",
-    "name": "resilience-tools",
-    "description": "Tools for building WebViewers",
-    "version": "0.4.0",
+    "name": "webviewer-tools",
+    "description": "Tools for building WebViewers, formerly resilience-tools",
+    "version": "0.5.0",
     "repository": {
-        "url": "https://github.com/xwiki-contrib/resilience-tools.git",
+        "url": "https://github.com/WebViewers/webviewer-tools.git",
         "type": "git"
     },
-    "main": "./index",
+    "bin": {
+        "wv2xar":"./bin/wv2xar"
+    },
+    "main": "./lib/index.js",
     "dependencies": {
         "archiver": "~0.4",
-        "xmhell": "~0.1.2",
         "walkdir": "~0.0.7"
     },
     "engines": {
